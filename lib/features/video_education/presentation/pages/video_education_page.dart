@@ -38,12 +38,21 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
 
   // Fungsi untuk memulai/mengganti video
   void _playVideo(VideoEducation newVideo) {
-    // 1. Dapatkan status video saat ini SEBELUM menggantinya
-    final oldVideoStatus = _controller?.value;
-
-    // 2. Panggil Cubit untuk menukar video
-    context.read<VideoEducationCubit>().selectVideo(newVideo, oldVideoStatus);
+    // --- HAPUS LOGIKA LAMA (oldVideoStatus) ---
+    // Cukup panggil cubit untuk menukar video di UI
+    context.read<VideoEducationCubit>().selectVideo(newVideo);
   }
+
+  // --- FUNGSI BARU: Listener untuk status player ---
+  void _onPlayerStateChanged(PlayerState state) {
+    if (state == PlayerState.ended) {
+      if (_currentVideo != null) {
+        // Panggil Cubit saat video selesai
+        context.read<VideoEducationCubit>().onVideoEnded(_currentVideo!);
+      }
+    }
+  }
+  // ----------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -71,16 +80,23 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
             if (state is VideoEducationLoaded) {
               final newVideoId = state.selectedVideo.youtubeVideoId;
 
+              // Simpan video saat ini
               setState(() {
                 _currentVideo = state.selectedVideo;
               });
 
               if (_controller == null) {
                 // Buat controller baru
-                _controller = YoutubePlayerController(
-                  initialVideoId: newVideoId,
-                  flags: const YoutubePlayerFlags(autoPlay: false),
-                );
+                _controller =
+                    YoutubePlayerController(
+                        initialVideoId: newVideoId,
+                        flags: const YoutubePlayerFlags(autoPlay: false),
+                      )
+                      // --- TAMBAHKAN LISTENER ---
+                      ..addListener(() {
+                        _onPlayerStateChanged(_controller!.value.playerState);
+                      });
+                // --------------------------
               } else if (_controller!.metadata.videoId != newVideoId) {
                 // Jika video diganti, muat video baru
                 _controller!.load(newVideoId);
@@ -209,18 +225,13 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
 
   /// Widget untuk satu item di "Video Lainnya"
   Widget _buildVideoListItem(VideoEducation video) {
-    // Tentukan warna tag berdasarkan status
-    bool isNew = video.status == "Baru";
-    Color tagColor = isNew
-        ? Colors.blue[700]!
-        : (video.status == "Sudah Ditonton"
-              ? Colors.orange[700]!
-              : Colors.grey[700]!);
-    Color tagBgColor = isNew
-        ? Colors.blue[50]!
-        : (video.status == "Sudah Ditonton"
-              ? Colors.orange[50]!
-              : Colors.grey[200]!);
+    // --- PERBAIKI LOGIKA TAG ---
+    // Tentukan warna tag berdasarkan status isWatched
+    bool isWatched = video.isWatched;
+    String tagText = isWatched ? "Sudah Ditonton" : "Baru";
+    Color tagColor = isWatched ? Colors.orange[700]! : Colors.blue[700]!;
+    Color tagBgColor = isWatched ? Colors.orange[50]! : Colors.blue[50]!;
+    // ----------------------------
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -282,7 +293,7 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Text(
-                        video.status, // Tampilkan status
+                        tagText, // <-- Tampilkan status dinamis
                         style: TextStyle(
                           color: tagColor,
                           fontWeight: bold,

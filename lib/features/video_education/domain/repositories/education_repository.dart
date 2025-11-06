@@ -7,4 +7,11 @@ abstract class EducationRepository {
   Future<Either<Failure, List<VideoEducation>>> getVideoEducations({
     required String token,
   });
+
+  // --- TAMBAHKAN KONTRAK BARU INI ---
+  Future<Either<Failure, void>> markVideoAsWatched({
+    required String token,
+    required int videoId,
+  });
+  // ---------------------------------
 }

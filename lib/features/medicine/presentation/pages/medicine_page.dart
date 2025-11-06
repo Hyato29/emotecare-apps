@@ -7,30 +7,15 @@ import 'package:emotcare_apps/features/medicine/presentation/cubit/prescription/
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dotted_border/dotted_border.dart'; // <-- Import package baru
+import 'package:dotted_border/dotted_border.dart';
+
+// Import baru untuk video
+import 'package:emotcare_apps/features/video_education/presentation/cubit/video_education_cubit.dart';
+import 'package:emotcare_apps/features/video_education/domain/entities/video_education.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MedicinePage extends StatefulWidget {
-  // Hapus 'const' agar bisa menggunakan data non-final
   MedicinePage({super.key});
-
-  // Dummy data untuk Video Edukasi
-  final List<Map<String, String>> videoItems = [
-    {
-      "image": "assets/images/logo.jpg", // Ganti dengan path Anda
-      "title": "Tips Mengatasi Bosan Minum Obat",
-      "tag": "Baru",
-    },
-    {
-      "image": "assets/images/logo.jpg", // Ganti dengan path Anda
-      "title": "Tips Mengatasi Bosan Minum Obat",
-      "tag": "Sudah Ditonton",
-    },
-    {
-      "image": "assets/images/logo.jpg", // Ganti dengan path Anda
-      "title": "Tips Mengatasi Bosan Minum Obat",
-      "tag": "Baru",
-    },
-  ];
 
   @override
   State<MedicinePage> createState() => _MedicinePageState();
@@ -43,6 +28,11 @@ class _MedicinePageState extends State<MedicinePage> {
     // Panggil data saat halaman pertama kali dimuat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PrescriptionListCubit>().fetchPrescriptions();
+
+      // Panggil data video (sudah benar)
+      if (context.read<VideoEducationCubit>().state is VideoEducationInitial) {
+        context.read<VideoEducationCubit>().fetchVideos();
+      }
     });
   }
 
@@ -52,7 +42,7 @@ class _MedicinePageState extends State<MedicinePage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          "Pengingat Minum Obat", // Judul dari gambar
+          "Pengingat Minum Obat",
           style: TextStyle(color: Colors.black, fontWeight: bold, fontSize: 18),
         ),
         backgroundColor: Colors.white,
@@ -66,8 +56,8 @@ class _MedicinePageState extends State<MedicinePage> {
       body: RefreshIndicator(
         onRefresh: () async {
           context.read<PrescriptionListCubit>().fetchPrescriptions();
+          context.read<VideoEducationCubit>().fetchVideos();
         },
-        // Ganti Column menjadi SingleChildScrollView
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           child: Column(
@@ -108,7 +98,6 @@ class _MedicinePageState extends State<MedicinePage> {
   Widget _buildCreateReminderButton(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Arahkan ke halaman PENCARIAN obat untuk memulai
         context.pushNamed('medicine_search');
       },
       child: DottedBorder(
@@ -153,7 +142,6 @@ class _MedicinePageState extends State<MedicinePage> {
           if (state.prescriptions.isEmpty) {
             return const Center(child: Text("Belum ada pengingat."));
           }
-          // Tampilkan ListView (tanpa scroll, karena sudah di SingleChildScrollView)
           return ListView.builder(
             itemCount: state.prescriptions.length,
             shrinkWrap: true,
@@ -195,7 +183,6 @@ class _MedicinePageState extends State<MedicinePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  // Data tanggal/hari tidak ada di API, jadi kita gunakan "Duration"
                   prescription.duration,
                   style: TextStyle(fontWeight: bold, fontSize: 16),
                 ),
@@ -210,7 +197,6 @@ class _MedicinePageState extends State<MedicinePage> {
           ),
           const SizedBox(width: 16),
           Text(
-            // Data waktu tidak ada, kita tampilkan "Frequency"
             prescription.frequency,
             style: TextStyle(
               color: primaryColor,
@@ -225,35 +211,46 @@ class _MedicinePageState extends State<MedicinePage> {
 
   /// Daftar "Video Edukasi"
   Widget _buildVideoEducationList() {
-    // 1. Hapus Container (tidak perlu height)
-    return ListView.builder(
-      // 2. Hapus scrollDirection (default-nya vertical)
+    return BlocBuilder<VideoEducationCubit, VideoEducationState>(
+      builder: (context, state) {
+        if (state is VideoEducationLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is VideoEducationError) {
+          return Center(child: Text(state.message));
+        }
+        if (state is VideoEducationLoaded) {
+          final allVideos = [state.selectedVideo, ...state.otherVideos];
+          final videosToShow = allVideos.take(3).toList();
 
-      // 3. Tambahkan shrinkWrap dan physics agar muat di dalam SingleChildScrollView
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-
-      itemCount: widget.videoItems.length,
-      itemBuilder: (context, index) {
-        final video = widget.videoItems[index];
-        // 4. Panggil _buildVideoCard (yang sudah diperbaiki di bawah)
-        return _buildVideoCard(
-          image: video['image']!,
-          title: video['title']!,
-          tag: video['tag']!,
-        );
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: videosToShow.length,
+            itemBuilder: (context, index) {
+              final video = videosToShow[index];
+              // Panggil _buildVideoCard (yang sudah diperbaiki)
+              return _buildVideoCard(video: video);
+            },
+          );
+        }
+        return const Center(child: Text("Memuat video..."));
       },
     );
   }
 
-  /// Widget untuk satu kartu video (Sekarang layout Row/Horizontal)
+  /// Widget untuk satu kartu video (Layout Row/Horizontal)
   Widget _buildVideoCard({
-    required String image,
-    required String title,
-    required String tag,
+    required VideoEducation video, // Terima entity VideoEducation
   }) {
-    bool isNew = tag == "Baru";
-    // Mirip dengan _buildReminderItem, tapi dengan layout berbeda
+    // --- PERBAIKAN LOGIKA TAG DI SINI ---
+    // Tentukan warna tag berdasarkan status isWatched (boolean)
+    bool isWatched = video.isWatched;
+    String tagText = isWatched ? "Sudah Ditonton" : "Baru";
+    Color tagColor = isWatched ? Colors.orange[700]! : Colors.blue[700]!;
+    Color tagBgColor = isWatched ? Colors.orange[50]! : Colors.blue[50]!;
+    // ------------------------------------
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(10),
@@ -262,58 +259,68 @@ class _MedicinePageState extends State<MedicinePage> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child: Row(
-        children: [
-          // 1. Gambar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              image,
-              width: 80, // Ukuran thumbnail
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // 2. Teks (Mengisi sisa ruang)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: semiBold, // Gunakan semiBold
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+      child: InkWell(
+        onTap: () {
+          context.pushNamed('education');
+        },
+        child: Row(
+          children: [
+            // 1. Gambar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: CachedNetworkImage(
+                imageUrl: video.thumbnailUrl, // Gunakan data dari entity
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                    Container(width: 80, height: 80, color: Colors.grey[200]),
+                errorWidget: (context, url, error) => Container(
+                  width: 80,
+                  height: 80,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.error),
                 ),
-                const SizedBox(height: 8),
-                // 3. Tag (Baru / Sudah Ditonton)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // 2. Teks (Mengisi sisa ruang)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video.title, // Gunakan data dari entity
+                    style: TextStyle(fontWeight: semiBold, fontSize: 14),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  decoration: BoxDecoration(
-                    color: (isNew ? Colors.blue[50] : Colors.orange[50]),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    tag,
-                    style: TextStyle(
-                      color: (isNew ? Colors.blue[700] : Colors.orange[700]),
-                      fontWeight: bold,
-                      fontSize: 10,
+                  const SizedBox(height: 8),
+                  // 3. Tag (Baru / Sudah Ditonton)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tagBgColor, // Gunakan warna dinamis
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      tagText, // Gunakan teks dinamis
+                      style: TextStyle(
+                        color: tagColor, // Gunakan warna dinamis
+                        fontWeight: bold,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

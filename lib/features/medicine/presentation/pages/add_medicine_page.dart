@@ -1,4 +1,4 @@
-// lib/features/medicine/presentation/pages/medicine_detail_page.dart
+// lib/features/medicine/presentation/pages/add_medicine_page.dart
 
 import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
@@ -40,13 +40,13 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   void _submit() {
     // Panggil cubit untuk menambahkan resep
     context.read<PrescriptionCubit>().submitPrescription(
-      medicineId: widget.medicine.id,
-      dosage: _dosisController.text,
-      duration: _periodeController
-          .text, // Ganti ini jika Anda punya controller "Durasi"
-      frequency: _frekuensiController.text,
-      instructions: _intruksiController.text,
-    );
+          medicineId: widget.medicine.id,
+          dosage: _dosisController.text,
+          duration: _periodeController
+              .text, // Ganti ini jika Anda punya controller "Durasi"
+          frequency: _frekuensiController.text,
+          instructions: _intruksiController.text,
+        );
   }
 
   @override
@@ -62,9 +62,17 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
               context: context,
               content: 'Pengingat berhasil ditambahkan.',
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                // Kembali ke halaman medicine (sesuai permintaan)
-                context.goNamed('prescription');
+                Navigator.of(context).pop(); // 1. Tutup dialog
+
+                // --- PERBAIKAN DI SINI ---
+                // Alur sebelumnya: [Home, Med, Search, Add]
+                context.pop(); // 2. Tutup AddMedicinePage. Stack: [Home, Med, Search]
+                context.pop(); // 3. Tutup MedicineSearchPage. Stack: [Home, Med]
+
+                // 4. Buka PrescriptionPage di atas MedicinePage
+                context.pushNamed('prescription');
+                // Stack akhir: [Home, Med, Prescription]
+                // -------------------------
               },
             );
           } else if (state is PrescriptionFailure) {

@@ -25,4 +25,24 @@ class EducationRepositoryImpl implements EducationRepository {
       return Left(ConnectionFailure('Gagal terhubung ke jaringan'));
     }
   }
+
+  // --- IMPLEMENTASIKAN FUNGSI BARU ---
+  @override
+  Future<Either<Failure, void>> markVideoAsWatched({
+    required String token,
+    required int videoId,
+  }) async {
+    try {
+      // Panggil datasource
+      await remoteDataSource.markVideoAsWatched(token: token, videoId: videoId);
+      // Jika sukses, kembalikan Right(void)
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on SocketException {
+      return Left(ConnectionFailure('Gagal terhubung ke jaringan'));
+    }
+  }
+
+  // ---------------------------------
 }

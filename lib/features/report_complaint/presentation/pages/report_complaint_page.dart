@@ -73,7 +73,6 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
                     ],
                   ),
                 ),
-
                 Positioned(
                   top: -50,
                   child: Container(
@@ -98,20 +97,54 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
     );
   }
 
+  // --- PERBAIKAN 1: GANTI FUNGSI INI ---
+  // (Menggunakan showModalBottomSheet + DraggableScrollableSheet)
   void _showHistoryBottomSheet(BuildContext context) {
     context.read<ReportComplaintCubit>().fetchHistory();
 
-    showMyBottomSheet(
+    showModalBottomSheet(
       context: context,
-      title: Text(
-        'Riwayat Laporan',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, fontWeight: bold, color: primaryColor),
-      ),
-
-      child: _buildHistoryListForBottomSheet(),
+      isScrollControlled: true, // Agar bisa ambil tinggi penuh
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6, // Tinggi awal 60%
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (_, scrollController) {
+            // Beri controller ke builder
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Riwayat Laporan',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: bold,
+                          color: primaryColor),
+                    ),
+                  ),
+                  Expanded(
+                    // Beri controller ke list
+                    child: _buildHistoryListForBottomSheet(scrollController),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
+  // ------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +169,9 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProfileCardWidget(color: purpleColor,),
+              ProfileCardWidget(
+                color: purpleColor,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Apa keluhan terhadap perkembangan kondisi anda?',
@@ -144,11 +179,14 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
                 style: TextStyle(fontSize: 16, color: purpleColor),
               ),
               const SizedBox(height: 16),
-
-              Center(child: Image.asset('assets/images/report_complaint.jpg', height: 120)),
+              Center(
+                  child: Image.asset('assets/images/report_complaint.jpg',
+                      height: 120)),
               const SizedBox(height: 16),
-
-              LabelformWidget(label: 'Bentuk Keluhan', color: purpleColor,),
+              LabelformWidget(
+                label: 'Bentuk Keluhan',
+                color: purpleColor,
+              ),
               const SizedBox(height: 8),
               FormWidget(
                 label: 'Pilih keluhan yang anda rasakan',
@@ -163,8 +201,10 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
                 ],
               ),
               const SizedBox(height: 8),
-
-              LabelformWidget(label: 'Frekuensi Gejala/Tingkat Keparahan', color: purpleColor,),
+              LabelformWidget(
+                label: 'Frekuensi Gejala/Tingkat Keparahan',
+                color: purpleColor,
+              ),
               const SizedBox(height: 8),
               FormWidget(
                 label: 'Pilih Frekuensi',
@@ -173,15 +213,18 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
                 options: const ['Ringan', 'Sedang', 'Parah', 'Sangat Parah'],
               ),
               const SizedBox(height: 8),
-
-              LabelformWidget(label: 'Tanggal Kejadian', color: purpleColor,),
+              LabelformWidget(
+                label: 'Tanggal Kejadian',
+                color: purpleColor,
+              ),
               const SizedBox(height: 8),
-              DateFormWidget(label: 'hh/bb/tttt', color: purpleColor, controller: _dateController),
+              DateFormWidget(
+                  label: 'hh/bb/tttt',
+                  color: purpleColor,
+                  controller: _dateController),
               const SizedBox(height: 24),
-
               _buildReportButton(context),
               const SizedBox(height: 16),
-
               _buildHistoryButton(context),
             ],
           ),
@@ -202,10 +245,10 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
                 ? null
                 : () {
                     context.read<ReportComplaintCubit>().submitReport(
-                      symptom: _symptomController.text,
-                      frequency: _frequencyController.text,
-                      date: _dateController.text,
-                    );
+                          symptom: _symptomController.text,
+                          frequency: _frequencyController.text,
+                          date: _dateController.text,
+                        );
                   },
             style: ElevatedButton.styleFrom(
               backgroundColor: purpleColor,
@@ -252,55 +295,54 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
     );
   }
 
-  Widget _buildHistoryListForBottomSheet() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.5,
-
-      child: BlocBuilder<ReportComplaintCubit, ReportComplaintState>(
-        builder: (context, state) {
-          if (state is HistoryLoading) {
-            return Center(
-              child: CircularProgressIndicator(color: primaryColor),
-            );
-          }
-          if (state is HistoryError) {
-            return Center(
+  // --- PERBAIKAN 2: Terima ScrollController dan hapus SizedBox ---
+  Widget _buildHistoryListForBottomSheet(ScrollController scrollController) {
+    // Hapus SizedBox(height: ...) yang membungkus BlocBuilder
+    return BlocBuilder<ReportComplaintCubit, ReportComplaintState>(
+      builder: (context, state) {
+        if (state is HistoryLoading) {
+          return Center(
+            child: CircularProgressIndicator(color: primaryColor),
+          );
+        }
+        if (state is HistoryError) {
+          return Center(
+            child: Text(
+              state.error,
+              style: const TextStyle(color: Colors.black),
+            ),
+          );
+        }
+        if (state is HistoryLoaded) {
+          if (state.historyList.isEmpty) {
+            return const Center(
               child: Text(
-                state.error,
-                style: const TextStyle(color: Colors.black),
+                "Belum ada riwayat laporan.",
+                style: TextStyle(color: Colors.grey),
               ),
             );
           }
-          if (state is HistoryLoaded) {
-            if (state.historyList.isEmpty) {
-              return const Center(
-                child: Text(
-                  "Belum ada riwayat laporan.",
-                  style: TextStyle(color: Colors.grey),
+          return ListView.builder(
+            controller: scrollController, // <-- Terapkan controller di sini
+            itemCount: state.historyList.length,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            itemBuilder: (context, index) {
+              final item = state.historyList[index];
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: HistoryReportItemWidget(
+                  date: item.date,
+                  symptom: item.symptom,
                 ),
               );
-            }
-            return ListView.builder(
-              itemCount: state.historyList.length,
+            },
+          );
+        }
 
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              itemBuilder: (context, index) {
-                final item = state.historyList[index];
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: HistoryReportItemWidget(
-                    date: item.date,
-                    symptom: item.symptom,
-                  ),
-                );
-              },
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
-      ),
+        return const SizedBox.shrink();
+      },
     );
   }
+  // -----------------------------------------------------------
 }

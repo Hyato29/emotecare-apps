@@ -47,6 +47,14 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        // --- TAMBAHAN: Munculkan tombol kembali standar ---
+        // Ini akan otomatis memanggil context.pop()
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.pop(),
+        ),
+        // ---------------------------------------------
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -63,11 +71,13 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
             }
             if (state is PrescriptionListLoaded) {
               if (state.prescriptions.isEmpty) {
-                return const Center(child: Text("Belum ada pengingat ditambahkan."));
+                return const Center(
+                    child: Text("Belum ada pengingat ditambahkan."));
               }
               // Jika data ada, tampilkan ListView
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                 itemCount: state.prescriptions.length,
                 itemBuilder: (context, index) {
                   final prescription = state.prescriptions[index];
@@ -79,7 +89,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
           },
         ),
       ),
-      // Tombol "Tambah Pengingat"
+      // --- PERBAIKAN: Tombol "Kembali" sekarang memanggil context.pop() ---
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Container(
         width: double.infinity,
@@ -93,7 +103,11 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
             ),
           ),
           onPressed: () {
-            context.goNamed('medicine');
+            // --- GANTI INI ---
+            // context.goNamed('medicine');
+            // --- MENJADI INI ---
+            context.pop();
+            // -----------------
           },
           child: Text(
             'Kembali',

@@ -8,7 +8,7 @@ class VideoEducationModel extends VideoEducation {
     required super.youtubeVideoId,
     required super.thumbnailUrl,
     required super.embedUrl,
-    required super.status, // <-- Tambahkan 'status' ke super
+    required super.isWatched, // <-- Ubah 'status' menjadi 'isWatched'
   });
 
   factory VideoEducationModel.fromJson(Map<String, dynamic> json) {
@@ -19,8 +19,11 @@ class VideoEducationModel extends VideoEducation {
       youtubeVideoId: json['youtube_video_id'] ?? '',
       thumbnailUrl: json['thumbnail_url'] ?? '',
       embedUrl: json['embed_url'] ?? '',
-      // API tidak mengirim status, jadi kita atur default "Baru"
-      status: json['status'] ?? "Baru",
+      // --- PERBAIKAN UTAMA ---
+      // API mengirim 'watched_by_users_count' (bernilai 0 atau 1)
+      // Kita ubah ini menjadi boolean
+      isWatched: (json['watched_by_users_count'] ?? 0) > 0,
+      // -----------------------
     );
   }
 }

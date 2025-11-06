@@ -10,6 +10,13 @@ import 'dart:developer' as dev;
 
 abstract class EducationRemoteDataSource {
   Future<List<VideoEducationModel>> getVideoEducations({required String token});
+
+  // --- 1. TAMBAHKAN FUNGSI BARU INI ---
+  Future<void> markVideoAsWatched({
+    required String token,
+    required int videoId,
+  });
+  // ---------------------------------
 }
 
 class EducationRemoteDataSourceImpl implements EducationRemoteDataSource {
@@ -59,4 +66,45 @@ class EducationRemoteDataSourceImpl implements EducationRemoteDataSource {
       throw ServerException(message: 'Gagal memuat video edukasi');
     }
   }
+
+  // --- 2. IMPLEMENTASIKAN FUNGSI BARU ---
+  @override
+  Future<void> markVideoAsWatched({
+    required String token,
+    required int videoId,
+  }) async {
+    // Sesuai dengan rute API Anda: video-educations/{video}/watch
+    final url = Uri.parse('$_baseUrl/video-educations/$videoId/watch');
+    dev.log('EducationDataSource: Calling POST $url', name: 'EducationDebug');
+
+    http.Response response;
+    try {
+      response = await client
+          .post(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+    } on TimeoutException catch (_) {
+      throw ServerException(message: 'Request timeout');
+    } on SocketException catch (_) {
+      throw ServerException(message: 'Koneksi gagal');
+    }
+
+    dev.log(
+      'EducationDataSource: MarkAsWatched status: ${response.statusCode}',
+      name: 'EducationDebug',
+    );
+
+    // Jika gagal (selain 200 OK), lempar error
+    if (response.statusCode != 200) {
+      throw ServerException(message: 'Gagal menandai video sebagai ditonton');
+    }
+    // Jika sukses (200), tidak perlu mengembalikan apa-apa (void)
+  }
+
+  // ------------------------------------
 }

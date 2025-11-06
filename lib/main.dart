@@ -39,6 +39,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+// --- IMPORT USE CASE BARU ---
+import 'package:emotcare_apps/features/video_education/domain/usecases/mark_video_as_watched.dart';
+// ----------------------------
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
@@ -80,7 +84,7 @@ void main() async {
   final getVideoEducations = GetVideoEducations(educationRepository);
 
   // --- 2. Buat SEMUA Usecase di sini ---
-  // Auth
+  // ... (use case auth tidak berubah) ...
   final registerUser = RegisterUser(authRepository);
   final loginUser = LoginUser(authRepository);
   final getUserProfile = GetUserProfile(authRepository);
@@ -95,6 +99,10 @@ void main() async {
   // Prescription
   final addPrescription = AddPrescription(prescriptionRepository);
   final getPrescriptions = GetPrescriptions(prescriptionRepository);
+
+  // --- TAMBAHKAN USE CASE BARU ---
+  final markVideoAsWatched = MarkVideoAsWatched(educationRepository);
+  // -----------------------------
 
   // --- 3. Buat AuthCubit (Satu-satunya) ---
   final authCubit = AuthCubit(
@@ -124,6 +132,9 @@ void main() async {
       addPrescriptionUsecase: addPrescription,
       getPrescriptionsUsecase: getPrescriptions,
       getVideoEducationsUsecase: getVideoEducations,
+      // --- KIRIM USE CASE BARU ---
+      markVideoAsWatchedUsecase: markVideoAsWatched,
+      // --------------------------
     ),
   );
 }
@@ -136,6 +147,9 @@ class MainApp extends StatelessWidget {
   final AddPrescription addPrescriptionUsecase;
   final GetPrescriptions getPrescriptionsUsecase;
   final GetVideoEducations getVideoEducationsUsecase;
+  // --- TERIMA USE CASE BARU ---
+  final MarkVideoAsWatched markVideoAsWatchedUsecase;
+  // ----------------------------
 
   const MainApp({
     super.key,
@@ -145,6 +159,7 @@ class MainApp extends StatelessWidget {
     required this.addPrescriptionUsecase, // <-- Terima ini
     required this.getPrescriptionsUsecase,
     required this.getVideoEducationsUsecase,
+    required this.markVideoAsWatchedUsecase, // <-- Terima ini
   });
 
   @override
@@ -182,13 +197,16 @@ class MainApp extends StatelessWidget {
           ),
         ),
 
+        // --- PERBAIKI VideoEducationCubit ---
         BlocProvider<VideoEducationCubit>(
           create: (context) => VideoEducationCubit(
             getVideoEducations: getVideoEducationsUsecase,
+            markVideoAsWatched: markVideoAsWatchedUsecase, // <-- Suntikkan
             authCubit: authCubit,
           ),
           lazy: false,
         ),
+        // ------------------------------------
 
         // Sisa Cubit Anda (asumsi belum butuh dependensi)
         BlocProvider<ReportSideEffectCubit>(

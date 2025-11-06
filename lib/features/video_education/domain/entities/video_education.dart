@@ -8,7 +8,10 @@ class VideoEducation extends Equatable {
   final String youtubeVideoId;
   final String thumbnailUrl;
   final String embedUrl;
-  final String status; // <-- 1. TAMBAHKAN STATUS
+  // --- GANTI INI ---
+  // final String status;
+  // --- MENJADI INI ---
+  final bool isWatched;
 
   const VideoEducation({
     required this.id,
@@ -17,11 +20,13 @@ class VideoEducation extends Equatable {
     required this.youtubeVideoId,
     required this.thumbnailUrl,
     required this.embedUrl,
-    this.status = "Baru", // <-- 2. BERI NILAI DEFAULT
+    // --- UBAH INI ---
+    // this.status = "Baru",
+    // --- MENJADI INI ---
+    this.isWatched = false,
   });
 
-  // --- 3. TAMBAHKAN FUNGSI copyWith ---
-  // Ini memungkinkan kita membuat salinan video dengan status baru
+  // --- 3. PERBAIKI FUNGSI copyWith ---
   VideoEducation copyWith({
     int? id,
     String? title,
@@ -29,7 +34,7 @@ class VideoEducation extends Equatable {
     String? youtubeVideoId,
     String? thumbnailUrl,
     String? embedUrl,
-    String? status,
+    bool? isWatched, // <-- Ubah ke bool
   }) {
     return VideoEducation(
       id: id ?? this.id,
@@ -38,11 +43,18 @@ class VideoEducation extends Equatable {
       youtubeVideoId: youtubeVideoId ?? this.youtubeVideoId,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       embedUrl: embedUrl ?? this.embedUrl,
-      status: status ?? this.status, // <-- Ini bagian pentingnya
+      isWatched: isWatched ?? this.isWatched, // <-- Terapkan bool
     );
   }
   // ---------------------------------
 
   @override
-  List<Object?> get props => [id, title, youtubeVideoId, thumbnailUrl, status];
+  // --- TAMBAHKAN isWatched KE props ---
+  List<Object?> get props => [
+    id,
+    title,
+    youtubeVideoId,
+    thumbnailUrl,
+    isWatched,
+  ];
 }
