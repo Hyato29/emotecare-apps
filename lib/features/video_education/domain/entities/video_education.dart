@@ -1,6 +1,9 @@
-// lib/features/education/domain/entities/video_education.dart
-import 'package:equatable/equatable.dart';
+// lib/features/video_education/domain/entities/video_education.dart
 
+import 'package:equatable/equatable.dart';
+// JANGAN import '.../models/video_education_model.dart' DI SINI
+
+// 1. Pastikan kelas ini tidak berubah
 class VideoEducation extends Equatable {
   final int id;
   final String title;
@@ -8,9 +11,6 @@ class VideoEducation extends Equatable {
   final String youtubeVideoId;
   final String thumbnailUrl;
   final String embedUrl;
-  // --- GANTI INI ---
-  // final String status;
-  // --- MENJADI INI ---
   final bool isWatched;
 
   const VideoEducation({
@@ -20,13 +20,21 @@ class VideoEducation extends Equatable {
     required this.youtubeVideoId,
     required this.thumbnailUrl,
     required this.embedUrl,
-    // --- UBAH INI ---
-    // this.status = "Baru",
-    // --- MENJADI INI ---
     this.isWatched = false,
   });
 
-  // --- 3. PERBAIKI FUNGSI copyWith ---
+  // Pastikan constructor 'empty' ini ada
+  const VideoEducation.empty()
+      : this(
+          id: 0,
+          title: '',
+          description: '',
+          youtubeVideoId: '',
+          thumbnailUrl: '',
+          embedUrl: '',
+          isWatched: false,
+        );
+
   VideoEducation copyWith({
     int? id,
     String? title,
@@ -34,7 +42,7 @@ class VideoEducation extends Equatable {
     String? youtubeVideoId,
     String? thumbnailUrl,
     String? embedUrl,
-    bool? isWatched, // <-- Ubah ke bool
+    bool? isWatched,
   }) {
     return VideoEducation(
       id: id ?? this.id,
@@ -43,18 +51,32 @@ class VideoEducation extends Equatable {
       youtubeVideoId: youtubeVideoId ?? this.youtubeVideoId,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       embedUrl: embedUrl ?? this.embedUrl,
-      isWatched: isWatched ?? this.isWatched, // <-- Terapkan bool
+      isWatched: isWatched ?? this.isWatched,
     );
   }
-  // ---------------------------------
 
   @override
-  // --- TAMBAHKAN isWatched KE props ---
-  List<Object?> get props => [
-    id,
-    title,
-    youtubeVideoId,
-    thumbnailUrl,
-    isWatched,
-  ];
+  List<Object?> get props =>
+      [id, title, youtubeVideoId, thumbnailUrl, isWatched];
+}
+
+// 2. --- PERIKSA KELAS INI ---
+// Ini adalah kemungkinan besar sumber error Anda.
+class VideoEducationLists extends Equatable {
+  
+  // PASTIKAN TIPE DATA DI SINI ADALAH 'VideoEducation' (ENTITY)
+  final List<VideoEducation> recommendedVideos;
+  final List<VideoEducation> otherVideos;
+
+  // JANGAN GUNAKAN 'VideoEducationModel' DI SINI
+  // final List<VideoEducationModel> recommendedVideos; // <-- SALAH
+  // final List<VideoEducationModel> otherVideos; // <-- SALAH
+
+  const VideoEducationLists({
+    required this.recommendedVideos,
+    required this.otherVideos,
+  });
+
+  @override
+  List<Object?> get props => [recommendedVideos, otherVideos];
 }

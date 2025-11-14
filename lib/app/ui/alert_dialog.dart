@@ -53,9 +53,7 @@ class ModernAlertDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -83,10 +81,7 @@ class ModernAlertDialog extends StatelessWidget {
             Text(
               content,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
             ),
             const SizedBox(height: 24),
 
@@ -100,7 +95,8 @@ class ModernAlertDialog extends StatelessWidget {
                       foregroundColor: Colors.grey[800],
                       side: BorderSide(color: Colors.grey[300]!),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(cancelText),
@@ -118,7 +114,8 @@ class ModernAlertDialog extends StatelessWidget {
                       backgroundColor: confirmColor, // Gunakan warna konfirmasi
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(confirmText),
@@ -133,7 +130,7 @@ class ModernAlertDialog extends StatelessWidget {
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

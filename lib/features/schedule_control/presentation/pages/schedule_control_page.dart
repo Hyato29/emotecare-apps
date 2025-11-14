@@ -1,11 +1,13 @@
-import 'package:emotcare_apps/app/ui/appbar_widget.dart';
+// lib/features/schedule_control/presentation/pages/schedule_control_page.dart
+
 import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
-import 'package:emotcare_apps/app/ui/profile_card_widget.dart';
-
-import 'package:emotcare_apps/features/schedule_control/presentation/widgets/history_schedule_item_widget.dart';
-import 'package:emotcare_apps/features/schedule_control/presentation/widgets/remaining_schedule_item_widget.dart';
+import 'package:emotcare_apps/features/schedule_control/domain/entities/schedule.dart';
+import 'package:emotcare_apps/features/schedule_control/presentation/cubit/schedule_control_cubit.dart';
+import 'package:emotcare_apps/features/schedule_control/presentation/widgets/schedule_item_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class ScheduleControlPage extends StatefulWidget {
   const ScheduleControlPage({super.key});
@@ -15,164 +17,163 @@ class ScheduleControlPage extends StatefulWidget {
 }
 
 class _ScheduleControlPageState extends State<ScheduleControlPage> {
+  // 0 = Kontrol, 1 = Riwayat
   int _selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ScheduleControlCubit>().fetchSchedules();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBarWidget(context),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          child: Column(
-            children: [
-              ProfileCardWidget(),
-              const SizedBox(height: 16),
-
-              Text(
-                'Anda telah menyelesaikan 5 kali kunjungan dari 8 rencana kontrol perawatan!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: primaryColor,
-                  fontWeight: semiBold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Image.asset('assets/images/schedule_control.jpg', height: 150),
-              const SizedBox(height: 16),
-
-              Text(
-                'Kunjungan Selanjutnya',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  fontWeight: medium,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              _buildNextScheduleCard(),
-              const SizedBox(height: 24),
-
-              _buildTabBar(),
-              const SizedBox(height: 16),
-
-              _buildContentList(),
-            ],
-          ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          "Jadwal Kontrol",
+          style: TextStyle(color: Colors.black, fontWeight: bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ScheduleControlCubit>().fetchSchedules();
+        },
+        child: BlocBuilder<ScheduleControlCubit, ScheduleControlState>(
+          builder: (context, state) {
+            if (state is ScheduleControlLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is ScheduleControlError) {
+              return Center(child: Text(state.message));
+            }
+            if (state is ScheduleControlLoaded) {
+              // Cek apakah KEDUA list kosong
+              if (state.upcomingSchedules.isEmpty &&
+                  state.pastSchedules.isEmpty) {
+                return _buildEmptyState();
+              }
+              // Jika ada data, tampilkan UI tab
+              return _buildDataState(state);
+            }
+            return const SizedBox.shrink(); // State Initial
+          },
         ),
       ),
     );
   }
 
-  Widget _buildNextScheduleCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: primaryColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        'SENIN, 6 OKTOBER 2025',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: bold),
+  // --- WIDGET UNTUK TAMPILAN KOSONG ---
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/schedule_control.jpg', // Ganti dengan path gambar Anda
+            height: 150,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Tidak ada kunjungan saat ini',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: medium,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
-    return Row(
+  // --- WIDGET UNTUK TAMPILAN JIKA ADA DATA ---
+  Widget _buildDataState(ScheduleControlLoaded state) {
+    // Tentukan list mana yang akan ditampilkan
+    final listToShow = _selectedTabIndex == 0
+        ? state.upcomingSchedules
+        : state.pastSchedules;
+
+    return Column(
       children: [
+        _buildTabBar(),
         Expanded(
-          child: ElevatedButton(
-            onPressed: () => setState(() => _selectedTabIndex = 0),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedTabIndex == 0
-                  ? primaryColor
-                  : Colors.grey[200],
-              foregroundColor: _selectedTabIndex == 0
-                  ? Colors.white
-                  : Colors.grey[600],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            child: Text('Sisa Kontrol', style: TextStyle(fontWeight: bold)),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => setState(() => _selectedTabIndex = 1),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedTabIndex == 1
-                  ? primaryColor
-                  : Colors.grey[200],
-              foregroundColor: _selectedTabIndex == 1
-                  ? Colors.white
-                  : Colors.grey[600],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            child: Text('Riwayat Kontrol', style: TextStyle(fontWeight: bold)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            child: _buildScheduleList(listToShow),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildContentList() {
+  // --- WIDGET UNTUK TAB BAR ("Kontrol" / "Riwayat") ---
+  Widget _buildTabBar() {
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: primaryColor, width: 1.5),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
+      color: Colors.grey[100], // Latar belakang tab
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+      child: Row(
         children: [
-          if (_selectedTabIndex == 0) ...[
-            RemainingScheduleItemWidget(
-              indexNumber: 1,
-              date: 'Senin, 6 Oktober 2025',
-              time: '10:10 WIB',
-            ),
-            _buildDivider(),
-            RemainingScheduleItemWidget(
-              indexNumber: 2,
-              date: 'Senin, 3 November 2025',
-              time: '10:10 WIB',
-            ),
-            _buildDivider(),
-            RemainingScheduleItemWidget(
-              indexNumber: 3,
-              date: 'Senin, 1 Desember 2025',
-              time: '10:10 WIB',
-            ),
-          ] else ...[
-            HistoryScheduleItemWidget(
-              date: '07 September 2025',
-              time: '10:10 WIB',
-            ),
-            _buildDivider(),
-            HistoryScheduleItemWidget(
-              date: '09 Agustus 2025',
-              time: '15:00 WIB',
-            ),
-            _buildDivider(),
-            HistoryScheduleItemWidget(date: '10 Juli 2025', time: '12:00 WIB'),
-          ],
+          _buildTabItem(context, 'Kontrol', 0),
+          const SizedBox(width: 16),
+          _buildTabItem(context, 'Riwayat', 1),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(height: 1, color: Colors.grey[300]);
+  Widget _buildTabItem(BuildContext context, String title, int index) {
+    final bool isActive = _selectedTabIndex == index;
+    return Expanded(
+      child: ElevatedButton(
+        onPressed: () => setState(() => _selectedTabIndex = index),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isActive ? primaryColor : Colors.white,
+          foregroundColor: isActive ? Colors.white : Colors.grey[600],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          elevation: isActive ? 2 : 0,
+        ),
+        child: Text(title, style: TextStyle(fontWeight: bold)),
+      ),
+    );
+  }
+
+  // --- WIDGET UNTUK DAFTAR JADWAL (Menerima list) ---
+  Widget _buildScheduleList(List<Schedule> schedules) {
+    if (schedules.isEmpty) {
+      return Center(
+        child: Text(
+          _selectedTabIndex == 0
+              ? 'Tidak ada jadwal kontrol.'
+              : 'Tidak ada riwayat kontrol.',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: schedules.length,
+      itemBuilder: (context, index) {
+        final schedule = schedules[index];
+        return ScheduleItemWidget(
+          date: schedule.scheduleDate, // Sesuaikan dengan data Anda
+          location: schedule.location,
+          time: schedule.scheduleTime,
+        );
+      },
+    );
   }
 }

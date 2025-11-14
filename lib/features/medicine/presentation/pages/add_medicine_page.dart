@@ -1,5 +1,6 @@
 // lib/features/medicine/presentation/pages/add_medicine_page.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
 import 'package:emotcare_apps/app/ui/appbar_widget.dart';
@@ -40,13 +41,13 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   void _submit() {
     // Panggil cubit untuk menambahkan resep
     context.read<PrescriptionCubit>().submitPrescription(
-          medicineId: widget.medicine.id,
-          dosage: _dosisController.text,
-          duration: _periodeController
-              .text, // Ganti ini jika Anda punya controller "Durasi"
-          frequency: _frekuensiController.text,
-          instructions: _intruksiController.text,
-        );
+      medicineId: widget.medicine.id,
+      dosage: _dosisController.text,
+      duration: _periodeController
+          .text, // Ganti ini jika Anda punya controller "Durasi"
+      frequency: _frekuensiController.text,
+      instructions: _intruksiController.text,
+    );
   }
 
   @override
@@ -66,8 +67,10 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
 
                 // --- PERBAIKAN DI SINI ---
                 // Alur sebelumnya: [Home, Med, Search, Add]
-                context.pop(); // 2. Tutup AddMedicinePage. Stack: [Home, Med, Search]
-                context.pop(); // 3. Tutup MedicineSearchPage. Stack: [Home, Med]
+                context
+                    .pop(); // 2. Tutup AddMedicinePage. Stack: [Home, Med, Search]
+                context
+                    .pop(); // 3. Tutup MedicineSearchPage. Stack: [Home, Med]
 
                 // 4. Buka PrescriptionPage di atas MedicinePage
                 context.pushNamed('prescription');
@@ -204,15 +207,24 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
           Container(
             width: 80,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                "$baseUrl${medicine.imageUrl}",
-                fit: BoxFit.cover,
-              ),
+              child: medicine.imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: '$baseUrl${medicine.imageUrl}',
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
+                    )
+                  : const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
             ),
           ),
           const SizedBox(width: 16),

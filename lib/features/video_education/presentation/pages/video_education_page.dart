@@ -23,6 +23,7 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Panggil fetchVideos jika state masih initial
       if (context.read<VideoEducationCubit>().state is VideoEducationInitial) {
         context.read<VideoEducationCubit>().fetchVideos();
       }
@@ -36,14 +37,12 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
     super.dispose();
   }
 
-  // Fungsi untuk memulai/mengganti video
+  // Fungsi untuk mengganti video di Cubit
   void _playVideo(VideoEducation newVideo) {
-    // --- HAPUS LOGIKA LAMA (oldVideoStatus) ---
-    // Cukup panggil cubit untuk menukar video di UI
     context.read<VideoEducationCubit>().selectVideo(newVideo);
   }
 
-  // --- FUNGSI BARU: Listener untuk status player ---
+  // Fungsi untuk memanggil API 'markAsWatched' saat video selesai
   void _onPlayerStateChanged(PlayerState state) {
     if (state == PlayerState.ended) {
       if (_currentVideo != null) {
@@ -52,7 +51,6 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
       }
     }
   }
-  // ----------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -80,26 +78,27 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
             if (state is VideoEducationLoaded) {
               final newVideoId = state.selectedVideo.youtubeVideoId;
 
-              // Simpan video saat ini
+              // Simpan video saat ini untuk dikirim ke onVideoEnded
               setState(() {
                 _currentVideo = state.selectedVideo;
               });
 
               if (_controller == null) {
-                // Buat controller baru
+                // Buat controller baru jika ini pertama kali
                 _controller =
                     YoutubePlayerController(
-                        initialVideoId: newVideoId,
-                        flags: const YoutubePlayerFlags(autoPlay: false),
-                      )
-                      // --- TAMBAHKAN LISTENER ---
-                      ..addListener(() {
-                        _onPlayerStateChanged(_controller!.value.playerState);
-                      });
-                // --------------------------
+                      initialVideoId: newVideoId,
+                      flags: const YoutubePlayerFlags(
+                        autoPlay: false, // <-- Ganti menjadi true
+                        mute: false,
+                      ),
+                    )..addListener(() {
+                      _onPlayerStateChanged(_controller!.value.playerState);
+                    });
               } else if (_controller!.metadata.videoId != newVideoId) {
-                // Jika video diganti, muat video baru
-                _controller!.load(newVideoId);
+                // Saat ganti video, putar otomatis juga
+                _controller!.load(newVideoId, startAt: 0);
+                _controller!.play();
               }
             }
           },
@@ -113,13 +112,14 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
               }
 
               if (state is VideoEducationLoaded) {
-                // Build UI dari state Cubit
+                // UI Dibangun dari state 'Loaded' yang baru
                 return SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 1. Player Video Utama
                         _buildMainVideoPlayer(state.selectedVideo),
                         const SizedBox(height: 16),
                         Text(
@@ -139,20 +139,51 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Text(
-                          'Video Lainnya',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: bold,
-                            color: Colors.black87,
+
+                        // --- 2. DAFTAR REKOMENDASI ---
+                        if (state.recommendedVideos.isNotEmpty) ...[
+                          Text(
+                            'Rekomendasi Untuk Anda', // Judul baru
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: bold,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Column(
-                          children: state.otherVideos.map((video) {
-                            return _buildVideoListItem(video);
-                          }).toList(),
-                        ),
+                          const SizedBox(height: 16),
+                          Column(
+                            children: state.recommendedVideos.map((video) {
+                              // Jangan tampilkan video yang sedang diputar di list
+                              if (video.id == state.selectedVideo.id) {
+                                return const SizedBox.shrink();
+                              }
+                              return _buildVideoListItem(video);
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // --- 3. DAFTAR VIDEO LAINNYA ---
+                        if (state.otherVideos.isNotEmpty) ...[
+                          Text(
+                            'Video Lainnya',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Column(
+                            children: state.otherVideos.map((video) {
+                              // Jangan tampilkan video yang sedang diputar di list
+                              if (video.id == state.selectedVideo.id) {
+                                return const SizedBox.shrink();
+                              }
+                              return _buildVideoListItem(video);
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -168,11 +199,10 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
 
   /// Widget untuk video player utama
   Widget _buildMainVideoPlayer(VideoEducation video) {
-    // Jika controller BELUM dibuat (pertama kali load)
-    // atau jika video yang dipilih BUKAN video yang sedang diputar
+    // Tampilkan thumbnail jika controller belum siap atau video beda
     if (_controller == null || _currentVideo?.id != video.id) {
       return InkWell(
-        onTap: () => _playVideo(video), // Panggil player
+        onTap: () => _playVideo(video),
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -210,7 +240,7 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
         ),
       );
     }
-    // Jika controller SUDAH dibuat, tampilkan player
+    // Jika controller sudah siap dan videonya cocok, tampilkan player
     else {
       return ClipRRect(
         borderRadius: BorderRadius.circular(15),
@@ -223,20 +253,19 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
     }
   }
 
-  /// Widget untuk satu item di "Video Lainnya"
+  /// Widget untuk satu item di daftar video
   Widget _buildVideoListItem(VideoEducation video) {
-    // --- PERBAIKI LOGIKA TAG ---
-    // Tentukan warna tag berdasarkan status isWatched
+    // --- LOGIKA TAG BARU (BERDASARKAN BOOLEAN) ---
     bool isWatched = video.isWatched;
     String tagText = isWatched ? "Sudah Ditonton" : "Baru";
     Color tagColor = isWatched ? Colors.orange[700]! : Colors.blue[700]!;
     Color tagBgColor = isWatched ? Colors.orange[50]! : Colors.blue[50]!;
-    // ----------------------------
+    // ---------------------------------------------
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
-        onTap: () => _playVideo(video), // Panggil ganti video
+        onTap: () => _playVideo(video), // Klik untuk memutar
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -293,7 +322,7 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Text(
-                        tagText, // <-- Tampilkan status dinamis
+                        tagText,
                         style: TextStyle(
                           color: tagColor,
                           fontWeight: bold,

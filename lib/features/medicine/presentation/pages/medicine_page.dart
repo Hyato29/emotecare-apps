@@ -1,5 +1,3 @@
-// lib/features/medicine/presentation/pages/medicine_page.dart
-
 import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
 import 'package:emotcare_apps/features/medicine/domain/entities/prescription.dart';
@@ -9,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dotted_border/dotted_border.dart';
 
-// Import baru untuk video
+// Import untuk Video
 import 'package:emotcare_apps/features/video_education/presentation/cubit/video_education_cubit.dart';
 import 'package:emotcare_apps/features/video_education/domain/entities/video_education.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,7 +27,7 @@ class _MedicinePageState extends State<MedicinePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PrescriptionListCubit>().fetchPrescriptions();
 
-      // Panggil data video (sudah benar)
+      // Panggil juga data video jika belum ada
       if (context.read<VideoEducationCubit>().state is VideoEducationInitial) {
         context.read<VideoEducationCubit>().fetchVideos();
       }
@@ -55,6 +53,7 @@ class _MedicinePageState extends State<MedicinePage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
+          // Refresh kedua cubit
           context.read<PrescriptionListCubit>().fetchPrescriptions();
           context.read<VideoEducationCubit>().fetchVideos();
         },
@@ -80,12 +79,12 @@ class _MedicinePageState extends State<MedicinePage> {
 
               // 4. Judul Video
               Text(
-                'Video Edukasi',
+                'Video Rekomendasi', // Judul diubah
                 style: TextStyle(fontSize: 18, fontWeight: bold),
               ),
               const SizedBox(height: 16),
 
-              // 5. Daftar Video (Horizontal)
+              // 5. Daftar Video (dari Cubit)
               _buildVideoEducationList(),
             ],
           ),
@@ -142,6 +141,7 @@ class _MedicinePageState extends State<MedicinePage> {
           if (state.prescriptions.isEmpty) {
             return const Center(child: Text("Belum ada pengingat."));
           }
+          // Tampilkan ListView
           return ListView.builder(
             itemCount: state.prescriptions.length,
             shrinkWrap: true,
@@ -157,7 +157,7 @@ class _MedicinePageState extends State<MedicinePage> {
     );
   }
 
-  /// Widget untuk satu item pengingat (UI dari gambar)
+  /// Widget untuk satu item pengingat
   Widget _buildReminderItem(Prescription prescription) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -209,7 +209,7 @@ class _MedicinePageState extends State<MedicinePage> {
     );
   }
 
-  /// Daftar "Video Edukasi"
+  /// Daftar "Video Rekomendasi"
   Widget _buildVideoEducationList() {
     return BlocBuilder<VideoEducationCubit, VideoEducationState>(
       builder: (context, state) {
@@ -220,36 +220,42 @@ class _MedicinePageState extends State<MedicinePage> {
           return Center(child: Text(state.message));
         }
         if (state is VideoEducationLoaded) {
-          final allVideos = [state.selectedVideo, ...state.otherVideos];
-          final videosToShow = allVideos.take(3).toList();
+          // --- LOGIKA BARU ---
+          // Ambil HANYA video rekomendasi
+          final videosToShow = state.recommendedVideos;
+
+          if (videosToShow.isEmpty) {
+            return const Center(
+              child: Text("Belum ada video rekomendasi untuk Anda."),
+            );
+          }
 
           return ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: videosToShow.length,
+            // Batasi hanya 3 video rekomendasi teratas
+            itemCount: videosToShow.length > 3 ? 3 : videosToShow.length,
             itemBuilder: (context, index) {
               final video = videosToShow[index];
-              // Panggil _buildVideoCard (yang sudah diperbaiki)
               return _buildVideoCard(video: video);
             },
           );
+          // ------------------
         }
+        // Tampilan awal (Initial)
         return const Center(child: Text("Memuat video..."));
       },
     );
   }
 
-  /// Widget untuk satu kartu video (Layout Row/Horizontal)
-  Widget _buildVideoCard({
-    required VideoEducation video, // Terima entity VideoEducation
-  }) {
-    // --- PERBAIKAN LOGIKA TAG DI SINI ---
-    // Tentukan warna tag berdasarkan status isWatched (boolean)
+  /// Widget untuk satu kartu video
+  Widget _buildVideoCard({required VideoEducation video}) {
+    // --- LOGIKA TAG BARU (BERDASARKAN BOOLEAN) ---
     bool isWatched = video.isWatched;
     String tagText = isWatched ? "Sudah Ditonton" : "Baru";
     Color tagColor = isWatched ? Colors.orange[700]! : Colors.blue[700]!;
     Color tagBgColor = isWatched ? Colors.orange[50]! : Colors.blue[50]!;
-    // ------------------------------------
+    // ---------------------------------------------
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -261,6 +267,7 @@ class _MedicinePageState extends State<MedicinePage> {
       ),
       child: InkWell(
         onTap: () {
+          // Arahkan ke halaman video edukasi utama
           context.pushNamed('education');
         },
         child: Row(
@@ -269,7 +276,7 @@ class _MedicinePageState extends State<MedicinePage> {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: CachedNetworkImage(
-                imageUrl: video.thumbnailUrl, // Gunakan data dari entity
+                imageUrl: video.thumbnailUrl,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
@@ -285,13 +292,13 @@ class _MedicinePageState extends State<MedicinePage> {
             ),
             const SizedBox(width: 12),
 
-            // 2. Teks (Mengisi sisa ruang)
+            // 2. Teks
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    video.title, // Gunakan data dari entity
+                    video.title,
                     style: TextStyle(fontWeight: semiBold, fontSize: 14),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -304,13 +311,13 @@ class _MedicinePageState extends State<MedicinePage> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: tagBgColor, // Gunakan warna dinamis
+                      color: tagBgColor, // Warna dinamis
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
-                      tagText, // Gunakan teks dinamis
+                      tagText, // Teks dinamis
                       style: TextStyle(
-                        color: tagColor, // Gunakan warna dinamis
+                        color: tagColor, // Warna dinamis
                         fontWeight: bold,
                         fontSize: 10,
                       ),

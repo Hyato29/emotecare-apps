@@ -26,6 +26,10 @@ import 'package:emotcare_apps/features/medicine/presentation/cubit/prescription/
 import 'package:emotcare_apps/features/medicine/presentation/cubit/prescription/prescription_list_cubit.dart';
 import 'package:emotcare_apps/features/report_complaint/presentation/cubit/report_complaint_cubit.dart';
 import 'package:emotcare_apps/features/report_side_effect/presentation/cubit/report_side_effect_cubit.dart';
+import 'package:emotcare_apps/features/schedule_control/data/datasources/schedule_remote_data_source.dart';
+import 'package:emotcare_apps/features/schedule_control/data/repositories/schedule_repository_impl.dart';
+import 'package:emotcare_apps/features/schedule_control/domain/usecases/get_schedules.dart';
+import 'package:emotcare_apps/features/schedule_control/presentation/cubit/schedule_control_cubit.dart';
 import 'package:emotcare_apps/features/video_education/data/datasources/education_remote_data_source.dart';
 import 'package:emotcare_apps/features/video_education/data/repositories/education_repository_impl.dart';
 import 'package:emotcare_apps/features/video_education/domain/usecases/get_video_educations.dart';
@@ -83,6 +87,14 @@ void main() async {
   );
   final getVideoEducations = GetVideoEducations(educationRepository);
 
+  final scheduleRemoteDataSource = ScheduleRemoteDataSourceImpl(
+    client: httpClient,
+  );
+  final scheduleRepository = ScheduleRepositoryImpl(
+    remoteDataSource: scheduleRemoteDataSource,
+  );
+  final getSchedules = GetSchedules(scheduleRepository);
+
   // --- 2. Buat SEMUA Usecase di sini ---
   // ... (use case auth tidak berubah) ...
   final registerUser = RegisterUser(authRepository);
@@ -102,6 +114,7 @@ void main() async {
 
   // --- TAMBAHKAN USE CASE BARU ---
   final markVideoAsWatched = MarkVideoAsWatched(educationRepository);
+
   // -----------------------------
 
   // --- 3. Buat AuthCubit (Satu-satunya) ---
@@ -134,6 +147,7 @@ void main() async {
       getVideoEducationsUsecase: getVideoEducations,
       // --- KIRIM USE CASE BARU ---
       markVideoAsWatchedUsecase: markVideoAsWatched,
+      getSchedulesUsecase: getSchedules,
       // --------------------------
     ),
   );
@@ -149,6 +163,8 @@ class MainApp extends StatelessWidget {
   final GetVideoEducations getVideoEducationsUsecase;
   // --- TERIMA USE CASE BARU ---
   final MarkVideoAsWatched markVideoAsWatchedUsecase;
+  final GetSchedules getSchedulesUsecase;
+
   // ----------------------------
 
   const MainApp({
@@ -160,6 +176,7 @@ class MainApp extends StatelessWidget {
     required this.getPrescriptionsUsecase,
     required this.getVideoEducationsUsecase,
     required this.markVideoAsWatchedUsecase, // <-- Terima ini
+    required this.getSchedulesUsecase,
   });
 
   @override
@@ -206,7 +223,14 @@ class MainApp extends StatelessWidget {
           ),
           lazy: false,
         ),
+
         // ------------------------------------
+        BlocProvider<ScheduleControlCubit>(
+          create: (context) => ScheduleControlCubit(
+            getSchedules: getSchedulesUsecase,
+            authCubit: authCubit,
+          ),
+        ),
 
         // Sisa Cubit Anda (asumsi belum butuh dependensi)
         BlocProvider<ReportSideEffectCubit>(

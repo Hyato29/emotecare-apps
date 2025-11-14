@@ -4,7 +4,9 @@ import 'package:dartz/dartz.dart';
 import 'package:emotcare_apps/core/error/exceptions.dart';
 import 'package:emotcare_apps/core/error/failures.dart';
 import 'package:emotcare_apps/features/video_education/data/datasources/education_remote_data_source.dart';
+// --- UBAH IMPORT INI ---
 import 'package:emotcare_apps/features/video_education/domain/entities/video_education.dart';
+// ----------------------
 import 'package:emotcare_apps/features/video_education/domain/repositories/education_repository.dart';
 
 class EducationRepositoryImpl implements EducationRepository {
@@ -13,29 +15,35 @@ class EducationRepositoryImpl implements EducationRepository {
   EducationRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, List<VideoEducation>>> getVideoEducations({
+  // --- UBAH TIPE KEMBALIAN DI SINI JUGA ---
+  @override
+  Future<Either<Failure, VideoEducationLists>> getVideoEducations({
     required String token,
   }) async {
     try {
-      final videos = await remoteDataSource.getVideoEducations(token: token);
-      return Right(videos);
+      // 1. Panggil data source (ini mengembalikan Model)
+      final videoLists = await remoteDataSource.getVideoEducations(
+        token: token,
+      );
+
+      // 2. Langsung kembalikan sebagai Entity.
+      //    JANGAN taruh logika firstWhere di sini.
+      return Right(videoLists);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on SocketException {
       return Left(ConnectionFailure('Gagal terhubung ke jaringan'));
     }
   }
+  // ---------------------------------------
 
-  // --- IMPLEMENTASIKAN FUNGSI BARU ---
   @override
   Future<Either<Failure, void>> markVideoAsWatched({
     required String token,
     required int videoId,
   }) async {
     try {
-      // Panggil datasource
       await remoteDataSource.markVideoAsWatched(token: token, videoId: videoId);
-      // Jika sukses, kembalikan Right(void)
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -43,6 +51,4 @@ class EducationRepositoryImpl implements EducationRepository {
       return Left(ConnectionFailure('Gagal terhubung ke jaringan'));
     }
   }
-
-  // ---------------------------------
 }

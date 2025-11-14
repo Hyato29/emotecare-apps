@@ -8,19 +8,36 @@ class VideoEducationInitial extends VideoEducationState {}
 
 class VideoEducationLoading extends VideoEducationState {}
 
-// --- PERBAIKI STATE INI ---
-class VideoEducationLoaded extends VideoEducationState {
-  final VideoEducation selectedVideo; // Video yang sedang diputar
-  final List<VideoEducation> otherVideos; // Daftar di bawah
-
-  VideoEducationLoaded({
-    required this.selectedVideo,
-    required this.otherVideos,
-  });
-}
-// -------------------------
-
 class VideoEducationError extends VideoEducationState {
   final String message;
   VideoEducationError(this.message);
+}
+
+class VideoEducationLoaded extends VideoEducationState {
+  // --- PERBARUI PROPERTI STATE INI ---
+  final VideoEducation selectedVideo;
+  final List<VideoEducation> recommendedVideos;
+  final List<VideoEducation> otherVideos;
+  // ----------------------------------
+
+  VideoEducationLoaded({
+    required this.selectedVideo,
+    required this.recommendedVideos,
+    required this.otherVideos,
+  });
+
+  // --- TAMBAHKAN FUNGSI copyWith ---
+  // (Penting untuk memperbarui state)
+  VideoEducationLoaded copyWith({
+    VideoEducation? selectedVideo,
+    List<VideoEducation>? recommendedVideos,
+    List<VideoEducation>? otherVideos,
+  }) {
+    return VideoEducationLoaded(
+      selectedVideo: selectedVideo ?? this.selectedVideo,
+      recommendedVideos: recommendedVideos ?? this.recommendedVideos,
+      otherVideos: otherVideos ?? this.otherVideos,
+    );
+  }
+  // ---------------------------------
 }
