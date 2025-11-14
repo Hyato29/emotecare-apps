@@ -1,6 +1,6 @@
 // lib/features/schedule_control/presentation/cubit/schedule_control_cubit.dart
 import 'package:bloc/bloc.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:emotcare_apps/features/schedule_control/domain/entities/schedule.dart';
 import 'package:emotcare_apps/features/schedule_control/domain/usecases/get_schedules.dart';
 import 'package:flutter/foundation.dart';

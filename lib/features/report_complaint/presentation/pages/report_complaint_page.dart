@@ -2,7 +2,6 @@ import 'package:emotcare_apps/app/ui/appbar_widget.dart';
 import 'package:emotcare_apps/app/ui/history_report_item_widget.dart';
 import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
-import 'package:emotcare_apps/app/ui/profile_card_widget.dart';
 import 'package:emotcare_apps/app/ui/labelform_widget.dart';
 import 'package:emotcare_apps/app/ui/form_widget.dart';
 
@@ -169,9 +168,7 @@ class _ReportComplaintPageState extends State<ReportComplaintPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProfileCardWidget(
-                color: purpleColor,
-              ),
+              
               const SizedBox(height: 16),
               Text(
                 'Apa keluhan terhadap perkembangan kondisi anda?',

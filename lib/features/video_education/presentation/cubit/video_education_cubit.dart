@@ -2,7 +2,7 @@
 // (VERSI FINAL LENGKAP)
 
 import 'package:bloc/bloc.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:emotcare_apps/features/video_education/domain/entities/video_education.dart';
 import 'package:emotcare_apps/features/video_education/domain/usecases/get_video_educations.dart';
 import 'package:flutter/foundation.dart';

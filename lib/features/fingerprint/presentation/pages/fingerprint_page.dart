@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 // --- GANTI SEMUA IMPORT CUBIT LAMA DENGAN INI ---
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 
 class FingerPrintPage extends StatelessWidget {
   const FingerPrintPage({super.key});
@@ -34,7 +34,7 @@ class FingerPrintPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                Image.asset("assets/images/logo.jpg", height: 150),
+                Image.asset("assets/images/logo.png", height: 150),
                 const Spacer(),
                 _buildAuthButtonsRow(context),
                 const Spacer(),

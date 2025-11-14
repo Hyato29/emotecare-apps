@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:emotcare_apps/features/medicine/domain/entities/medicine.dart';
 import 'package:emotcare_apps/features/medicine/domain/usecases/get_medicines.dart';
 import 'package:flutter/foundation.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 
 part 'medicine_state.dart';
 

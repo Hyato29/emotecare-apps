@@ -5,7 +5,7 @@ import 'package:emotcare_apps/app/themes/fontweight.dart'; // Asumsi ini berisi 
 import 'package:emotcare_apps/app/ui/appbar_widget.dart';
 import 'package:emotcare_apps/app/ui/info_dialog.dart';
 import 'package:emotcare_apps/app/ui/labelform_widget.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:emotcare_apps/features/auth/presentation/widgets/passform_widget.dart';
 import 'package:emotcare_apps/features/auth/presentation/widgets/textform_widget.dart';
 import 'package:flutter/material.dart';
@@ -51,9 +51,7 @@ class _LoginPagesState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBarWidget(
-        context
-      ),
+      appBar: appBarWidget(context),
       resizeToAvoidBottomInset: false,
       body: BlocListener<AuthCubit, AuthState>(
         // <-- 1. Dengarkan AuthCubit
@@ -72,7 +70,14 @@ class _LoginPagesState extends State<LoginPage> {
 
             // 3. Dengarkan state 'AuthFailure'
           } else if (state is AuthFailure) {
-            showErrorDialog(context: context, content: state.error);
+            showErrorDialog(
+              context: context,
+              content: state.error,
+              onPressed: () {
+                context.pop();
+                context.pop();
+              },
+            );
           }
         },
         child: Padding(

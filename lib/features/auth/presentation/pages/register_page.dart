@@ -13,7 +13,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // --- GANTI IMPORT LAMA (RegisterCubit) DENGAN INI ---
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 // --------------------------------------------------
 
 class RegisterPage extends StatefulWidget {
@@ -64,11 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
             if (state.openSettings) {
               openAppSettings();
             }
-          }
-          // 3. State untuk Register (TIDAK LAGI 'RegisterSuccess')
-          // Kita anggap sukses register akan mengembalikan state 'Unauthenticated'
-          // dengan pesan sukses, lalu kita arahkan ke login.
-          else if (state is Unauthenticated && state.message != null) {
+          } else if (state is Unauthenticated && state.message != null) {
             // Tampilkan pesan sukses dari AuthCubit
             showSuccessDialog(
               context: context,
@@ -81,7 +77,15 @@ class _RegisterPageState extends State<RegisterPage> {
           }
           // 4. State untuk Gagal Register
           else if (state is AuthFailure) {
-            showErrorDialog(context: context, content: state.error);
+            showErrorDialog(
+              context: context,
+              content: state.error,
+              onPressed: () {
+                context.pop();
+                context.pop();
+                context.pop();
+              },
+            );
           }
         },
         child: SingleChildScrollView(

@@ -1,5 +1,5 @@
 // lib/features/splash/splash_page.dart
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // Import warna tema Anda
@@ -70,7 +70,7 @@ class _SplashPageState extends State<SplashPage>
                 opacity: _fadeAnimation,
                 child: Center(
                   // Ganti dengan path logo Anda
-                  child: Image.asset('assets/images/logo.jpg', width: 150),
+                  child: Image.asset('assets/images/logo.png', width: 150),
                 ),
               ),
 

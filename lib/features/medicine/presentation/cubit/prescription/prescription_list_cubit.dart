@@ -1,6 +1,6 @@
 // lib/features/medicine/presentation/cubit/prescription_list_cubit.dart
 import 'package:bloc/bloc.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:emotcare_apps/features/medicine/domain/entities/prescription.dart';
 import 'package:emotcare_apps/features/medicine/domain/usecases/get_prescriptions.dart';
 import 'package:flutter/foundation.dart';

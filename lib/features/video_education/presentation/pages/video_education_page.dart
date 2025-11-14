@@ -1,3 +1,4 @@
+import 'package:emotcare_apps/app/themes/colors.dart';
 import 'package:emotcare_apps/app/themes/fontweight.dart';
 import 'package:emotcare_apps/features/video_education/domain/entities/video_education.dart';
 import 'package:emotcare_apps/features/video_education/presentation/cubit/video_education_cubit.dart';
@@ -137,6 +138,8 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
                             fontSize: 14,
                             color: Colors.grey[600],
                           ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 24),
 
@@ -267,54 +270,74 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
       child: InkWell(
         onTap: () => _playVideo(video), // Klik untuk memutar
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12), // Padding di dalam card
+          margin: const EdgeInsets.only(bottom: 12), // Jarak antar card
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.grey[300]!),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Kiri: Thumbnail
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
                   imageUrl: video.thumbnailUrl,
-                  width: 80,
-                  height: 80,
+                  width: 150, // Lebar gambar
+                  height: 100, // Tinggi gambar
                   fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      Container(width: 80, height: 80, color: Colors.grey[200]),
+                  placeholder: (context, url) => Container(
+                    width: 120,
+                    height: 90,
+                    color: Colors.grey[200],
+                  ),
                   errorWidget: (context, url, error) => Container(
-                    width: 80,
-                    height: 80,
+                    width: 120,
+                    height: 90,
                     color: Colors.grey[200],
                     child: const Icon(Icons.error),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
+              // Kanan: Kolom Teks
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Judul
                     Text(
                       video.title,
-                      style: TextStyle(fontWeight: bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: bold,
+                        fontSize: 14,
+                        color: primaryColor, // Warna biru
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
+                    // Deskripsi
                     Text(
                       video.description,
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 1,
+                      maxLines: 2, // 2 baris deskripsi
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    // Tag Dinamis
+                    // Tag
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 8, // Padding tag
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
@@ -326,7 +349,7 @@ class _VideoEducationPageState extends State<VideoEducationPage> {
                         style: TextStyle(
                           color: tagColor,
                           fontWeight: bold,
-                          fontSize: 10,
+                          fontSize: 10, // Ukuran font tag
                         ),
                       ),
                     ),

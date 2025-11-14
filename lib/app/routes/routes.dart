@@ -1,7 +1,7 @@
 // lib/app/routes/routes.dart
 
 import 'package:emotcare_apps/app/ui/splash_page.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:emotcare_apps/features/auth/presentation/pages/login_page.dart';
 import 'package:emotcare_apps/features/auth/presentation/pages/register_page.dart';
 import 'package:emotcare_apps/features/comming_soon.dart';

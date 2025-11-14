@@ -57,8 +57,10 @@ class AuthCubit extends Cubit<AuthState> {
        super(AuthInitial());
 
   // Dipanggil dari main.dart
+  // Dipanggil dari main.dart
   Future<void> checkAuthStatus() async {
     emit(AuthLoading());
+    // --- PERBAIKAN 1: Ubah durasi ke 2 detik ---
     const minSplashDuration = Duration(seconds: 3);
     final startTime = DateTime.now();
 
@@ -67,18 +69,25 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (token == null) {
       dev.log('AuthCubit: Token tidak ditemukan.', name: 'AuthDebug');
+
+      // --- PERBAIKAN 2: Tambahkan delay di sini ---
+      final duration = DateTime.now().difference(startTime);
+      if (duration < minSplashDuration) {
+        await Future.delayed(minSplashDuration - duration);
+      }
+      // ------------------------------------------
+
       emit(Unauthenticated());
       return;
     }
 
     dev.log('AuthCubit: Token ditemukan, memvalidasi...', name: 'AuthDebug');
-    final result =
-        await _getUserProfile(); // Usecase ini sudah mengambil token internal
-
+    final result = await _getUserProfile();
     final apiDuration = DateTime.now().difference(startTime);
     if (apiDuration < minSplashDuration) {
       await Future.delayed(minSplashDuration - apiDuration);
     }
+    // -------------------------------------------------------------------
 
     result.fold(
       (failure) {

@@ -13,7 +13,11 @@ import 'package:emotcare_apps/features/auth/domain/usecases/remove_credentials.d
 import 'package:emotcare_apps/features/auth/domain/usecases/remove_token.dart';
 import 'package:emotcare_apps/features/auth/domain/usecases/save_credentials.dart';
 import 'package:emotcare_apps/features/auth/domain/usecases/save_token.dart';
-import 'package:emotcare_apps/features/auth/presentation/cubit/auth/auth_cubit.dart';
+import 'package:emotcare_apps/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:emotcare_apps/features/home/data/datasources/banner_remote_data_source.dart';
+import 'package:emotcare_apps/features/home/data/repositories/banner_repository_impl.dart';
+import 'package:emotcare_apps/features/home/domain/usecases/get_banner.dart';
+import 'package:emotcare_apps/features/home/presentation/cubit/home_cubit.dart';
 import 'package:emotcare_apps/features/medicine/data/datasources/medicine_remote_data_source.dart';
 import 'package:emotcare_apps/features/medicine/data/datasources/prescription_remote_data_source.dart';
 import 'package:emotcare_apps/features/medicine/data/repositories/medicine_repository_impl.dart';
@@ -43,9 +47,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// --- IMPORT USE CASE BARU ---
 import 'package:emotcare_apps/features/video_education/domain/usecases/mark_video_as_watched.dart';
-// ----------------------------
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +55,6 @@ void main() async {
 
   await dotenv.load(fileName: ".env");
 
-  // --- 1. Buat SEMUA Dependensi Inti di sini ---
   final httpClient = http.Client();
   final secureStorage = const FlutterSecureStorage();
 
@@ -64,6 +65,16 @@ void main() async {
     client: httpClient,
   );
   final prescriptionRemoteDataSource = PrescriptionRemoteDataSourceImpl(
+    client: httpClient,
+  );
+  final educationRemoteDataSource = EducationRemoteDataSourceImpl(
+    client: httpClient,
+  );
+  final scheduleRemoteDataSource = ScheduleRemoteDataSourceImpl(
+    client: httpClient,
+  );
+  // --- TAMBAHKAN DATASOURCE BANNER ---
+  final bannerRemoteDataSource = BannerRemoteDataSourceImpl(
     client: httpClient,
   );
 
@@ -78,25 +89,18 @@ void main() async {
   final prescriptionRepository = PrescriptionRepositoryImpl(
     remoteDataSource: prescriptionRemoteDataSource,
   );
-
-  final educationRemoteDataSource = EducationRemoteDataSourceImpl(
-    client: httpClient,
-  );
   final educationRepository = EducationRepositoryImpl(
     remoteDataSource: educationRemoteDataSource,
-  );
-  final getVideoEducations = GetVideoEducations(educationRepository);
-
-  final scheduleRemoteDataSource = ScheduleRemoteDataSourceImpl(
-    client: httpClient,
   );
   final scheduleRepository = ScheduleRepositoryImpl(
     remoteDataSource: scheduleRemoteDataSource,
   );
-  final getSchedules = GetSchedules(scheduleRepository);
+  // --- TAMBAHKAN REPO BANNER ---
+  final bannerRepository = BannerRepositoryImpl(
+    remoteDataSource: bannerRemoteDataSource,
+  );
 
-  // --- 2. Buat SEMUA Usecase di sini ---
-  // ... (use case auth tidak berubah) ...
+  // Usecases
   final registerUser = RegisterUser(authRepository);
   final loginUser = LoginUser(authRepository);
   final getUserProfile = GetUserProfile(authRepository);
@@ -106,18 +110,15 @@ void main() async {
   final getCredentials = GetCredentials(authRepository);
   final saveCredentials = SaveCredentials(authRepository);
   final removeCredentials = RemoveCredentials(authRepository);
-  // Medicine
   final getMedicines = GetMedicines(medicineRepository);
-  // Prescription
   final addPrescription = AddPrescription(prescriptionRepository);
   final getPrescriptions = GetPrescriptions(prescriptionRepository);
-
-  // --- TAMBAHKAN USE CASE BARU ---
+  final getVideoEducations = GetVideoEducations(educationRepository);
   final markVideoAsWatched = MarkVideoAsWatched(educationRepository);
+  final getSchedules = GetSchedules(scheduleRepository);
+  final getBanners = GetBanners(bannerRepository);
 
-  // -----------------------------
-
-  // --- 3. Buat AuthCubit (Satu-satunya) ---
+  // AuthCubit
   final authCubit = AuthCubit(
     registerUser: registerUser,
     loginUser: loginUser,
@@ -130,25 +131,22 @@ void main() async {
     removeCredentials: removeCredentials,
   );
 
-  // Panggil checkAuthStatus di sini
-  await authCubit.checkAuthStatus();
+  // Hapus await checkAuthStatus() dari sini
 
-  // --- 4. Buat Router dan berikan AuthCubit ---
   final appRouter = AppRouter(authCubit: authCubit);
 
   runApp(
     MainApp(
       authCubit: authCubit,
       router: appRouter.router,
-      // Kirim usecase yang dibutuhkan oleh Cubit lain
       getMedicinesUsecase: getMedicines,
       addPrescriptionUsecase: addPrescription,
       getPrescriptionsUsecase: getPrescriptions,
       getVideoEducationsUsecase: getVideoEducations,
-      // --- KIRIM USE CASE BARU ---
       markVideoAsWatchedUsecase: markVideoAsWatched,
       getSchedulesUsecase: getSchedules,
-      // --------------------------
+      // --- KIRIM USECASE BANNER ---
+      getBannersUsecase: getBanners,
     ),
   );
 }
@@ -156,83 +154,75 @@ void main() async {
 class MainApp extends StatelessWidget {
   final AuthCubit authCubit;
   final GoRouter router;
-  // Terima Usecase untuk Cubit lain
   final GetMedicines getMedicinesUsecase;
   final AddPrescription addPrescriptionUsecase;
   final GetPrescriptions getPrescriptionsUsecase;
   final GetVideoEducations getVideoEducationsUsecase;
-  // --- TERIMA USE CASE BARU ---
   final MarkVideoAsWatched markVideoAsWatchedUsecase;
   final GetSchedules getSchedulesUsecase;
-
-  // ----------------------------
+  // --- TERIMA USECASE BANNER ---
+  final GetBanners getBannersUsecase;
 
   const MainApp({
     super.key,
     required this.authCubit,
     required this.router,
     required this.getMedicinesUsecase,
-    required this.addPrescriptionUsecase, // <-- Terima ini
+    required this.addPrescriptionUsecase,
     required this.getPrescriptionsUsecase,
     required this.getVideoEducationsUsecase,
-    required this.markVideoAsWatchedUsecase, // <-- Terima ini
+    required this.markVideoAsWatchedUsecase,
     required this.getSchedulesUsecase,
+    required this.getBannersUsecase, // <-- Terima di constructor
   });
 
   @override
   Widget build(BuildContext context) {
-    // --- HAPUS SEMUA Usecase yang dibuat di sini ---
-    // (Mereka sudah dibuat di main() dan diteruskan)
-
     return MultiBlocProvider(
       providers: [
-        // Sediakan instance AuthCubit yang sudah dibuat
         BlocProvider<AuthCubit>.value(value: authCubit),
 
-        // --- HAPUS RegisterCubit, LoginCubit, dan FingerprintCubit ---
+        // --- TAMBAHKAN PROVIDER UNTUK HOMECUBIT ---
+        BlocProvider<HomeCubit>(
+          create: (context) => HomeCubit(
+            getBanners: getBannersUsecase,
+            authCubit: authCubit,
+          ),
+        ),
+        // ----------------------------------------
 
-        // Sisa Cubit Anda
         BlocProvider<MedicineCubit>(
           create: (context) => MedicineCubit(
             getMedicines: getMedicinesUsecase,
-            authCubit: authCubit, // Kirim AuthCubit ke sini
+            authCubit: authCubit,
           ),
         ),
-
-        // --- PERBAIKI PrescriptionCubit ---
         BlocProvider<PrescriptionCubit>(
           create: (context) => PrescriptionCubit(
-            addPrescription: addPrescriptionUsecase, // <-- Suntikkan di sini
-            authCubit: authCubit, // Berikan AuthCubit
+            addPrescription: addPrescriptionUsecase,
+            authCubit: authCubit,
           ),
         ),
-
         BlocProvider<PrescriptionListCubit>(
           create: (context) => PrescriptionListCubit(
             getPrescriptions: getPrescriptionsUsecase,
             authCubit: authCubit,
           ),
         ),
-
-        // --- PERBAIKI VideoEducationCubit ---
         BlocProvider<VideoEducationCubit>(
           create: (context) => VideoEducationCubit(
             getVideoEducations: getVideoEducationsUsecase,
-            markVideoAsWatched: markVideoAsWatchedUsecase, // <-- Suntikkan
+            markVideoAsWatched: markVideoAsWatchedUsecase,
             authCubit: authCubit,
           ),
           lazy: false,
         ),
-
-        // ------------------------------------
         BlocProvider<ScheduleControlCubit>(
           create: (context) => ScheduleControlCubit(
             getSchedules: getSchedulesUsecase,
             authCubit: authCubit,
           ),
         ),
-
-        // Sisa Cubit Anda (asumsi belum butuh dependensi)
         BlocProvider<ReportSideEffectCubit>(
           create: (BuildContext context) => ReportSideEffectCubit(),
         ),
@@ -249,9 +239,6 @@ class MainApp extends StatelessWidget {
           ),
           textTheme: GoogleFonts.robotoTextTheme(Theme.of(context).textTheme),
         ),
-        // debugShowCheckedModeBanner: false,
-
-        // Gunakan router dari constructor
         routerConfig: router,
       ),
     );
